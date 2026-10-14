@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History — PhishGuard</title>
+  <meta name="description" content="Review and filter PhishGuard scan history." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 8 82 22v22c0 24-12.5 42-32 50-19.5-8-32-26-32-50V22L50 8Z' fill='%230ea882'/%3E%3C/svg%3E" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f4f6fb;
+      --surface:   #ffffff;
+      --surface2:  #f0f3fa;
+      --surface3:  #e8edf8;
+      --border:    rgba(30, 50, 100, 0.09);
+      --border2:   rgba(30, 50, 100, 0.16);
+      --text:      #111827;
+      --muted:     #6b7a99;
+      --subtle:    #b0bdd6;
+      --teal:      #0ea882;
+      --teal-lt:   #e6f7f2;
+      --teal-mid:  rgba(14,168,130,0.15);
+      --red:       #e84b6a;
+      --red-lt:    #fef0f3;
+      --red-mid:   rgba(232,75,106,0.12);
+      --amber:     #f59e0b;
+      --amber-lt:  #fffbeb;
+      --amber-mid: rgba(245,158,11,0.13);
+      --blue:      #3b82f6;
+      --blue-lt:   #eff6ff;
+      --blue-mid:  rgba(59,130,246,0.13);
+      --navy:      #1e2d5a;
+      --sidebar-w: 240px;
+      --radius:    10px;
+      --radius-lg: 14px;
+      --shadow:    0 1px 3px rgba(20,40,90,0.07), 0 4px 16px rgba(20,40,90,0.05);
+      --shadow-md: 0 4px 20px rgba(20,40,90,0.10), 0 1px 4px rgba(20,40,90,0.06);
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: -80px; left: -80px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(14,168,130,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .sidebar::after {
+      content: '';
+      position: absolute;
+      bottom: 40px; right: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 11px;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative; z-index: 1;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--teal);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 4px rgba(14,168,130,0.2);
+    }
+    .brand-icon svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .brand-sub  { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4); letter-spacing: 0.5px; margin-top: 1px; }
+
+    .nav { display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; flex: 1; position: relative; z-index: 1; }
+    .nav-section { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1.2px; color: rgba(255,255,255,0.28); text-transform: uppercase; padding: 10px 8px 6px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 11px;
+      border-radius: var(--radius);
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      font-size: 13.5px; font-weight: 500;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+    }
+    .nav-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .nav-link:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-link.active { background: rgba(14,168,130,0.18); color: #4eefc7; border-color: rgba(14,168,130,0.28); }
+    .nav-link.active svg { stroke: #4eefc7; }
+    .nav-badge { margin-left: auto; background: rgba(232,75,106,0.25); color: #ff8fa3; font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 6px; border-radius: 4px; }
+
+    .sidebar-footer { padding: 14px 12px 16px; border-top: 1px solid rgba(255,255,255,0.07); position: relative; z-index: 1; }
+    .user-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.06);
+      margin-bottom: 8px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .user-chip:hover { background: rgba(255,255,255,0.1); }
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #0ea882 0%, #3b82f6 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 10px; color: #4eefc7; font-family: 'JetBrains Mono', monospace; }
+    .btn-logout {
+      width: 100%; padding: 8px; background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius); color: rgba(255,255,255,0.45);
+      font-size: 12.5px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all 0.15s;
+    }
+    .btn-logout:hover { background: rgba(232,75,106,0.15); border-color: rgba(232,75,106,0.3); color: #ff8fa3; }
+    .btn-logout svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── MAIN ── */
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+      gap: 16px;
+    }
+    .topbar-left { display: flex; flex-direction: column; gap: 1px; }
+    .page-kicker { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: var(--teal); letter-spacing: 1.5px; text-transform: uppercase; }
+    .page-title  { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; }
+    .page-sub    { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
+    }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 2px 8px rgba(14,168,130,0.3); }
+    .btn-primary:hover { background: #0d9a77; box-shadow: 0 4px 14px rgba(14,168,130,0.4); transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+    .btn-sm { padding: 6px 13px; font-size: 12px; }
+    .btn-danger-ghost { background: var(--red-lt); color: var(--red); border: 1px solid rgba(232,75,106,0.2); }
+    .btn-danger-ghost:hover { background: rgba(232,75,106,0.18); }
+
+    /* ── CONTENT ── */
+    .content { padding: 22px 28px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── TOOLBAR CARD ── */
+    .toolbar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+
+    /* Filter tabs — matches dashboard segmented control */
+    .filter-tabs {
+      display: flex; gap: 3px;
+      padding: 3px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .filter-tab {
+      padding: 6px 14px;
+      border: none; border-radius: 7px;
+      font-size: 12.5px; font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      color: var(--muted); background: transparent;
+      transition: all 0.15s;
+    }
+    .filter-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+    .filter-tab:hover:not(.active) { color: var(--text); }
+
+    .toolbar-divider { width: 1px; height: 26px; background: var(--border2); flex-shrink: 0; }
+
+    /* Search field */
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
+    .search-wrap svg { position: absolute; top: 50%; left: 11px; transform: translateY(-50%); width: 14px; height: 14px; stroke: var(--subtle); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+    .search-input {
+      width: 100%; padding: 8px 12px 8px 34px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); font-size: 13px;
+      font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text);
+      outline: none; transition: all 0.15s;
+    }
+    .search-input::placeholder { color: var(--subtle); }
+    .search-input:focus { border-color: var(--teal); background: var(--surface); box-shadow: 0 0 0 3px rgba(14,168,130,0.1); }
+
+    /* Per-page select */
+    .per-page-select {
+      padding: 7px 10px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); font-size: 12.5px;
+      font-family: 'JetBrains Mono', monospace; color: var(--muted);
+      outline: none; cursor: pointer; transition: border-color 0.15s;
+    }
+    .per-page-select:focus { border-color: var(--teal); }
+
+    .count-pill {
+      margin-left: auto;
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 20px; flex-shrink: 0;
+    }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead th {
+      padding: 11px 16px; text-align: left;
+      font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 12px 16px; vertical-align: middle; color: var(--text); }
+
+    .subject-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .sender-cell  { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--muted); }
+    .time-cell    { font-size: 11.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 500;
+    }
+    .b-safe  { background: var(--teal-lt);  color: var(--teal); }
+    .b-phish { background: var(--red-lt);   color: var(--red);  }
+    .b-sus   { background: var(--amber-lt); color: var(--amber);}
+
+    /* Risk tag */
+    .risk-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; }
+    .risk-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .rh .risk-dot { background: var(--red);   } .rh { color: var(--red);   }
+    .rm .risk-dot { background: var(--amber); } .rm { color: var(--amber); }
+    .rl .risk-dot { background: var(--teal);  } .rl { color: var(--teal);  }
+
+    /* Confidence bar */
+    .conf-bar { display: flex; align-items: center; gap: 7px; }
+    .conf-track { width: 56px; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 2px; }
+    .cf-teal  { background: var(--teal);  }
+    .cf-amber { background: var(--amber); }
+    .cf-red   { background: var(--red);   }
+    .conf-val { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: var(--muted); min-width: 30px; }
+
+    /* Expand row */
+    .expand-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 11.5px; font-weight: 600; color: var(--muted);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer; transition: all 0.12s; white-space: nowrap;
+    }
+    .expand-btn:hover { background: var(--surface2); color: var(--text); }
+    .expand-btn.open { background: var(--teal-lt); color: var(--teal); border-color: rgba(14,168,130,0.25); }
+
+    .detail-row td {
+      padding: 0 !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    .detail-inner {
+      padding: 16px 20px 20px;
+      background: var(--surface2);
+      border-top: 2px solid rgba(14,168,130,0.2);
+      animation: slideDown 0.18s ease forwards;
+    }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .detail-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 13px;
+    }
+    .detail-item-label { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .detail-item-val   { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    .detail-section-title { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+    .detail-preview {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 13px 15px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--muted); line-height: 1.6; white-space: pre-wrap;
+      max-height: 120px; overflow-y: auto;
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .page-info { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 11px;
+      border: 1px solid var(--border); border-radius: 7px;
+      background: var(--surface); font-size: 12px; font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif; color: var(--muted);
+      cursor: pointer; transition: all 0.12s;
+    }
+    .page-btn:hover { background: var(--surface3); color: var(--text); }
+    .page-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      padding: 52px 20px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .empty-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+    }
+    .empty-icon svg { width: 22px; height: 22px; stroke: var(--subtle); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .empty-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .empty-sub   { font-size: 12.5px; color: var(--muted); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(17,24,39,0.55); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-card {
+      width: min(100%, 600px); max-height: 86vh; overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(20,40,90,0.2);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+    .modal-body  { padding: 20px; }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: var(--surface2); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 16px; line-height: 1;
+      transition: all 0.12s;
+    }
+    .modal-close:hover { background: var(--red-lt); color: var(--red); border-color: rgba(232,75,106,0.25); }
+
+    .hidden { display: none !important; }
+
+    /* ── ALERTS ── */
+    .alert { padding: 11px 14px; border-radius: var(--radius); font-size: 12.5px; border: 1px solid; }
+    .alert-success { background: var(--teal-lt); border-color: rgba(14,168,130,0.2); color: #0a7a5f; }
+    .alert-warn    { background: var(--amber-lt); border-color: rgba(245,158,11,0.2); color: #92600a; }
+
+    /* ── TOP USER ── */
+    .top-user { display: flex; align-items: center; gap: 9px; padding: 7px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+    .top-avatar { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #0ea882, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+    .top-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      body { overflow: auto; }
+      .sidebar { width: 100%; min-height: auto; flex-direction: row; align-items: center; }
+      .nav { flex-direction: row; flex: 1; padding: 8px 12px; gap: 4px; }
+      .nav-section { display: none; }
+      .sidebar-footer { display: none; }
+      .main { min-height: auto; }
+      .detail-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .topbar { flex-wrap: wrap; }
+      .toolbar-card { gap: 10px; }
+      .search-wrap { max-width: 100%; flex: 1 1 100%; }
+      .count-pill { display: none; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a class="brand" href="dashboard.html">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M9.5 12l1.7 1.7 3.5-4"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">PhishGuard</div>
+      <div class="brand-sub">Threat Intelligence</div>
+    </div>
+  </a>
+
+  <nav class="nav">
+    <span class="nav-section">Overview</span>
+    <a href="dashboard.html" class="nav-link">
+      <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9z"/><path d="M14 20h6V4h-6v16z"/><path d="M4 20h6v-3H4v3z"/></svg>
+      Dashboard 
+    </a>
+    <a href="scanner.html" class="nav-link">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8.5 11.5l2 2 4-5"/></svg>
+      Scan Email
+    </a>
+    <a href="history.html" class="nav-link active">
+      <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      History
+    </a>
+    <a href="gmail.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Gmail</a>
+    <span class="nav-section">System</span>
+    <a href="admin.html" class="nav-link" id="adminNavLink">
+      <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1-2 3.4-.2-.1a1.8 1.8 0 0 0-2 .4l-.2.2a1.8 1.8 0 0 0-.5 1H9a1.8 1.8 0 0 0-.5-1l-.2-.2a1.8 1.8 0 0 0-2-.4l-.2.1-2-3.4.1-.1a1.8 1.8 0 0 0 .4-2 2 2 0 0 0-.7-.8L3.7 14v-4l.2-.1a2 2 0 0 0 .7-.8 1.8 1.8 0 0 0-.4-2l-.1-.1 2-3.4.2.1a1.8 1.8 0 0 0 2-.4l.2-.2A1.8 1.8 0 0 0 9 2h6a1.8 1.8 0 0 0 .5 1l.2.2a1.8 1.8 0 0 0 2 .4l.2-.1 2 3.4-.1.1a1.8 1.8 0 0 0-.4 2c.1.3.4.6.7.8l.2.1v4l-.2.1c-.3.2-.6.5-.7.9z"/></svg>
+      Admin
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="navAvatar">U</div>
+      <div class="user-info">
+        <div class="user-name" id="navUsername">User</div>
+        <div class="user-role">authenticated</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 4v16"/></svg>
+      Sign out
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="page-kicker">Detection Ledger</span>
+      <h1 class="page-title">Scan History</h1>
+      <p class="page-sub">Filter, search, expand, and export prior message decisions.</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" id="exportCsvBtn" type="button" onclick="exportHistoryCsv()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Export CSV
+      </button>
+      <a href="scanner.html" class="btn btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        New Scan
+      </a>
+      <div class="top-user">
+        <div class="top-avatar" id="topAvatar">U</div>
+        <span class="top-name" id="topUsername">User</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar-card">
+      <div class="filter-tabs" role="tablist" aria-label="History filter">
+        <button class="filter-tab active" id="filterAll"      type="button" onclick="applyFilter('all')">All</button>
+        <button class="filter-tab"        id="filterPhishing" type="button" onclick="applyFilter('phishing')">Phishing</button>
+        <button class="filter-tab"        id="filterSafe"     type="button" onclick="applyFilter('safe')">Safe</button>
+        <button class="filter-tab"        id="filterSus"      type="button" onclick="applyFilter('suspicious')">Suspicious</button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="historySearch" class="search-input" type="search" placeholder="Search sender or subject…" oninput="renderFilteredHistory()" />
+      </div>
+
+      <select id="perPageSelect" class="per-page-select" onchange="loadHistory()">
+        <option value="10">10 / page</option>
+        <option value="20" selected>20 / page</option>
+        <option value="50">50 / page</option>
+      </select>
+
+      <span id="historyCount" class="count-pill">— results</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Sender</th>
+              <th>Subject</th>
+              <th>Verdict</th>
+              <th>Risk</th>
+              <th>Confidence</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Demo rows — will be replaced by history.js -->
+            <tr>
+              <td class="time-cell">2025-05-21 09:04</td>
+              <td class="sender-cell">no-reply@amaz0n-secure.com</td>
+              <td class="subject-cell">Your account has been suspended</td>
+              <td><span class="badge b-phish">Phishing</span></td>
+              <td><div class="risk-tag rh"><div class="risk-dot"></div>High</div></td>
+              <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill cf-red" style="width:96%"></div></div><span class="conf-val">96%</span></div></td>
+              <td><button class="expand-btn" onclick="toggleDetail(this, 1)">Details</button></td>
+            </tr>
+            <tr class="detail-row hidden" id="detail-1">
+              <td colspan="7">
+                <div class="detail-inner">
+                  <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-item-label">Model Score</div><div class="detail-item-val" style="color:var(--red)">96 / 100</div></div>
+                    <div class="detail-item"><div class="detail-item-label">URLs Found</div><div class="detail-item-val">3 suspicious</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Sender Rep.</div><div class="detail-item-val" style="color:var(--red)">Unknown</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Lang. Pressure</div><div class="detail-item-val" style="color:var(--red)">High</div></div>
+                  </div>
+                  <div class="detail-section-title">Email Preview</div>
+                  <div class="detail-preview">Your Amazon account has been temporarily suspended due to suspicious activity. Click the link below within 24 hours or your account will be permanently closed. [http://amaz0n-secure.com/verify]</div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="time-cell">2025-05-21 08:51</td>
+              <td class="sender-cell">team@company.io</td>
+              <td class="subject-cell">Q3 team report – action required</td>
+              <td><span class="badge b-safe">Safe</span></td>
+              <td><div class="risk-tag rl"><div class="risk-dot"></div>Low</div></td>
+              <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill cf-teal" style="width:99%"></div></div><span class="conf-val">99%</span></div></td>
+              <td><button class="expand-btn" onclick="toggleDetail(this, 2)">Details</button></td>
+            </tr>
+            <tr class="detail-row hidden" id="detail-2">
+              <td colspan="7">
+                <div class="detail-inner">
+                  <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-item-label">Model Score</div><div class="detail-item-val" style="color:var(--teal)">2 / 100</div></div>
+                    <div class="detail-item"><div class="detail-item-label">URLs Found</div><div class="detail-item-val">1 safe</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Sender Rep.</div><div class="detail-item-val" style="color:var(--teal)">Trusted</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Lang. Pressure</div><div class="detail-item-val" style="color:var(--teal)">None</div></div>
+                  </div>
+                  <div class="detail-section-title">Email Preview</div>
+                  <div class="detail-preview">Hi team, please find the Q3 report attached. Review by Friday and flag any discrepancies to your manager. Thanks!</div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="time-cell">2025-05-21 08:39</td>
+              <td class="sender-cell">security@paypa1.support</td>
+              <td class="subject-cell">Unusual sign-in activity detected</td>
+              <td><span class="badge b-sus">Suspicious</span></td>
+              <td><div class="risk-tag rm"><div class="risk-dot"></div>Medium</div></td>
+              <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill cf-amber" style="width:74%"></div></div><span class="conf-val">74%</span></div></td>
+              <td><button class="expand-btn" onclick="toggleDetail(this, 3)">Details</button></td>
+            </tr>
+            <tr class="detail-row hidden" id="detail-3">
+              <td colspan="7">
+                <div class="detail-inner">
+                  <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-item-label">Model Score</div><div class="detail-item-val" style="color:var(--amber)">61 / 100</div></div>
+                    <div class="detail-item"><div class="detail-item-label">URLs Found</div><div class="detail-item-val">2 (1 suspicious)</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Sender Rep.</div><div class="detail-item-val" style="color:var(--amber)">Unverified</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Lang. Pressure</div><div class="detail-item-val" style="color:var(--amber)">Medium</div></div>
+                  </div>
+                  <div class="detail-section-title">Email Preview</div>
+                  <div class="detail-preview">We noticed a sign-in from a new device. If this was you, no action is needed. If not, secure your account here: [http://paypa1.support/secure]</div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="time-cell">2025-05-21 08:26</td>
+              <td class="sender-cell">invoices@acme-corp.com</td>
+              <td class="subject-cell">Invoice #INV-2991 attached</td>
+              <td><span class="badge b-safe">Safe</span></td>
+              <td><div class="risk-tag rl"><div class="risk-dot"></div>Low</div></td>
+              <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill cf-teal" style="width:91%"></div></div><span class="conf-val">91%</span></div></td>
+              <td><button class="expand-btn" onclick="toggleDetail(this, 4)">Details</button></td>
+            </tr>
+            <tr class="detail-row hidden" id="detail-4">
+              <td colspan="7">
+                <div class="detail-inner">
+                  <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-item-label">Model Score</div><div class="detail-item-val" style="color:var(--teal)">9 / 100</div></div>
+                    <div class="detail-item"><div class="detail-item-label">URLs Found</div><div class="detail-item-val">0</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Sender Rep.</div><div class="detail-item-val" style="color:var(--teal)">Known</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Lang. Pressure</div><div class="detail-item-val" style="color:var(--teal)">None</div></div>
+                  </div>
+                  <div class="detail-section-title">Email Preview</div>
+                  <div class="detail-preview">Please find invoice #INV-2991 attached for your records. Payment due within 30 days. Contact billing@acme-corp.com with any questions.</div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="time-cell">2025-05-21 07:55</td>
+              <td class="sender-cell">winner@gift-promo99.net</td>
+              <td class="subject-cell">Claim your $500 Amazon gift card!</td>
+              <td><span class="badge b-phish">Phishing</span></td>
+              <td><div class="risk-tag rh"><div class="risk-dot"></div>High</div></td>
+              <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill cf-red" style="width:99%"></div></div><span class="conf-val">99%</span></div></td>
+              <td><button class="expand-btn" onclick="toggleDetail(this, 5)">Details</button></td>
+            </tr>
+            <tr class="detail-row hidden" id="detail-5">
+              <td colspan="7">
+                <div class="detail-inner">
+                  <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-item-label">Model Score</div><div class="detail-item-val" style="color:var(--red)">99 / 100</div></div>
+                    <div class="detail-item"><div class="detail-item-label">URLs Found</div><div class="detail-item-val">5 suspicious</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Sender Rep.</div><div class="detail-item-val" style="color:var(--red)">Unknown</div></div>
+                    <div class="detail-item"><div class="detail-item-label">Lang. Pressure</div><div class="detail-item-val" style="color:var(--red)">Critical</div></div>
+                  </div>
+                  <div class="detail-section-title">Email Preview</div>
+                  <div class="detail-preview">CONGRATULATIONS! You've been selected as today's winner. Claim your FREE $500 Amazon Gift Card NOW! Limited time offer — click here immediately: [http://gift-promo99.net/claim?id=84729]</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination" id="paginationBar">
+        <span class="page-info">Showing 1–5 of 14 results</span>
+        <div class="page-btns">
+          <button class="page-btn" disabled>←</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">→</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- DETAIL MODAL (used by history.js) -->
+<div id="detailModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">Scan Detail</span>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+  /* ── Inline expand/collapse ── */
+  function toggleDetail(btn, id) {
+    const row = document.getElementById('detail-' + id);
+    if (!row) return;
+    const isOpen = !row.classList.contains('hidden');
+    // Close all others
+    document.querySelectorAll('.detail-row').forEach(r => r.classList.add('hidden'));
+    document.querySelectorAll('.expand-btn').forEach(b => { b.textContent = 'Details'; b.classList.remove('open'); });
+    if (!isOpen) {
+      row.classList.remove('hidden');
+      btn.textContent = 'Close';
+      btn.classList.add('open');
+    }
+  }
+
+  /* ── Filter tabs ── */
+  function applyFilter(type) {
+    ['filterAll','filterPhishing','filterSafe','filterSus'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    const map = { all: 'filterAll', phishing: 'filterPhishing', safe: 'filterSafe', suspicious: 'filterSus' };
+    const tab = document.getElementById(map[type]);
+    if (tab) tab.classList.add('active');
+    if (typeof renderFilteredHistory === 'function') renderFilteredHistory();
+  }
+
+  /* ── Modal ── */
+  function closeModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+  }
+  document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  /* ── Admin nav ── */
+  const adminLink = document.getElementById('adminNavLink');
+  if (adminLink) {
+    const role = localStorage.getItem('role') || '';
+    if (role !== 'admin') adminLink.style.display = 'none';
+  }
+
+  function logout() { if (typeof window._logout === 'function') window._logout(); }
+</script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/history.js"></script>
+</body>
+</html>

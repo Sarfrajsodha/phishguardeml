@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan Email — PhishGuard</title>
+  <meta name="description" content="Analyze suspicious email content with PhishGuard's phishing detection engine." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 8 82 22v22c0 24-12.5 42-32 50-19.5-8-32-26-32-50V22L50 8Z' fill='%230ea882'/%3E%3C/svg%3E" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f4f6fb;
+      --surface:   #ffffff;
+      --surface2:  #f0f3fa;
+      --surface3:  #e8edf8;
+      --border:    rgba(30, 50, 100, 0.09);
+      --border2:   rgba(30, 50, 100, 0.16);
+      --text:      #111827;
+      --muted:     #6b7a99;
+      --subtle:    #b0bdd6;
+      --teal:      #0ea882;
+      --teal-lt:   #e6f7f2;
+      --teal-mid:  rgba(14,168,130,0.15);
+      --red:       #e84b6a;
+      --red-lt:    #fef0f3;
+      --red-mid:   rgba(232,75,106,0.12);
+      --amber:     #f59e0b;
+      --amber-lt:  #fffbeb;
+      --amber-mid: rgba(245,158,11,0.13);
+      --blue:      #3b82f6;
+      --blue-lt:   #eff6ff;
+      --navy:      #1e2d5a;
+      --sidebar-w: 240px;
+      --radius:    10px;
+      --radius-lg: 14px;
+      --shadow:    0 1px 3px rgba(20,40,90,0.07), 0 4px 16px rgba(20,40,90,0.05);
+      --shadow-md: 0 4px 20px rgba(20,40,90,0.10), 0 1px 4px rgba(20,40,90,0.06);
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute; top: -80px; left: -80px;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(14,168,130,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .sidebar::after {
+      content: '';
+      position: absolute; bottom: 40px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 11px;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative; z-index: 1;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--teal); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 0 0 4px rgba(14,168,130,0.2);
+    }
+    .brand-icon svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .brand-sub  { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.4); letter-spacing: 0.5px; margin-top: 1px; }
+
+    .nav { display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; flex: 1; position: relative; z-index: 1; }
+    .nav-section { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1.2px; color: rgba(255,255,255,0.28); text-transform: uppercase; padding: 10px 8px 6px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 11px; border-radius: var(--radius);
+      color: rgba(255,255,255,0.55); text-decoration: none;
+      font-size: 13.5px; font-weight: 500; transition: all 0.18s;
+      border: 1px solid transparent;
+    }
+    .nav-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .nav-link:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-link.active { background: rgba(14,168,130,0.18); color: #4eefc7; border-color: rgba(14,168,130,0.28); }
+    .nav-link.active svg { stroke: #4eefc7; }
+    .nav-badge { margin-left: auto; background: rgba(232,75,106,0.25); color: #ff8fa3; font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 6px; border-radius: 4px; }
+
+    .sidebar-footer { padding: 14px 12px 16px; border-top: 1px solid rgba(255,255,255,0.07); position: relative; z-index: 1; }
+    .user-chip { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--radius); background: rgba(255,255,255,0.06); margin-bottom: 8px; cursor: pointer; transition: background 0.15s; }
+    .user-chip:hover { background: rgba(255,255,255,0.1); }
+    .avatar { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #0ea882 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 10px; color: #4eefc7; font-family: 'JetBrains Mono', monospace; }
+    .btn-logout { width: 100%; padding: 8px; background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); color: rgba(255,255,255,0.45); font-size: 12.5px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.15s; }
+    .btn-logout:hover { background: rgba(232,75,106,0.15); border-color: rgba(232,75,106,0.3); color: #ff8fa3; }
+    .btn-logout svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── MAIN ── */
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    .topbar {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 18px 28px; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10; gap: 16px;
+    }
+    .topbar-left { display: flex; flex-direction: column; gap: 1px; }
+    .page-kicker { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: var(--teal); letter-spacing: 1.5px; text-transform: uppercase; }
+    .page-title  { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; }
+    .page-sub    { font-size: 12.5px; color: var(--muted); margin-top: 2px; max-width: 520px; line-height: 1.5; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 16px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
+    }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 2px 8px rgba(14,168,130,0.3); }
+    .btn-primary:hover { background: #0d9a77; box-shadow: 0 4px 14px rgba(14,168,130,0.4); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+    .btn-lg { padding: 12px 20px; font-size: 14px; width: 100%; justify-content: center; }
+    .btn-sm { padding: 6px 13px; font-size: 12px; }
+
+    /* ── TOP USER ── */
+    .top-user { display: flex; align-items: center; gap: 9px; padding: 7px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+    .top-avatar { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #0ea882, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+    .top-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+    /* ── CONTENT ── */
+    .content { padding: 22px 28px; display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 18px; align-items: start; flex: 1; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px; }
+    .card-title-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-teal  { background: var(--teal);  box-shadow: 0 0 0 3px var(--teal-lt);  }
+    .dot-blue  { background: var(--blue);  box-shadow: 0 0 0 3px var(--blue-lt);  }
+    .dot-amber { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-lt); }
+    .dot-red   { background: var(--red);   box-shadow: 0 0 0 3px var(--red-lt);   }
+    .card-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── SCAN MODE TABS ── */
+    .mode-tabs {
+      display: flex; gap: 3px; padding: 3px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .mode-tab {
+      padding: 6px 18px; border: none; border-radius: 7px;
+      font-size: 12.5px; font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer; color: var(--muted); background: transparent;
+      transition: all 0.15s;
+    }
+    .mode-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+    .mode-tab:hover:not(.active) { color: var(--text); }
+
+    /* ── FORM ELEMENTS ── */
+    .form-stack { display: flex; flex-direction: column; gap: 13px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 10px 13px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); font-size: 13px;
+      font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text);
+      outline: none; transition: all 0.15s;
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--subtle); }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--teal); background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(14,168,130,0.1);
+    }
+    .form-textarea { resize: vertical; min-height: 180px; font-size: 12.5px; line-height: 1.6; }
+    .form-select { cursor: pointer; }
+
+    /* ── QUICK SAMPLES ── */
+    .samples-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); gap: 12px;
+    }
+    .samples-label { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
+    .samples-btns { display: flex; gap: 6px; }
+
+    /* ── DROP ZONE ── */
+    .drop-zone {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; min-height: 220px; padding: 28px;
+      background: var(--surface2); border: 2px dashed var(--border2);
+      border-radius: var(--radius-lg); cursor: pointer; text-align: center;
+      transition: all 0.15s;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--teal); background: var(--teal-lt); }
+    .drop-icon {
+      width: 52px; height: 52px;
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .drop-icon svg { width: 24px; height: 24px; stroke: var(--teal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .drop-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .drop-sub   { font-size: 12px; color: var(--muted); }
+
+    .file-info {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 14px;
+      background: var(--teal-lt); border: 1px solid rgba(14,168,130,0.25);
+      border-radius: var(--radius);
+    }
+    .file-info-icon { width: 28px; height: 28px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .file-info-icon svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .file-info-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .file-info-size { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+    /* ── RESULTS PANEL ── */
+    .results-panel { position: sticky; top: 81px; display: flex; flex-direction: column; gap: 0; }
+
+    /* Empty state */
+    .result-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 12px; padding: 44px 24px; min-height: 420px;
+    }
+    .result-empty-icon {
+      width: 72px; height: 72px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .result-empty-icon svg { width: 34px; height: 34px; stroke: var(--subtle); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .result-empty h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+    .result-empty p  { font-size: 12.5px; color: var(--muted); max-width: 260px; line-height: 1.6; }
+
+    /* Scanning state */
+    .scanning-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; text-align: center; padding: 44px 24px; min-height: 420px;
+    }
+    .scanning-pulse {
+      width: 72px; height: 72px;
+      background: var(--teal-lt); border: 1px solid rgba(14,168,130,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      animation: softPulse 1.2s ease-in-out infinite;
+    }
+    .scanning-pulse svg { width: 32px; height: 32px; stroke: var(--teal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    @keyframes softPulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(14,168,130,0.1); } }
+    .scanning-card h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+    .scanning-card p  { font-size: 12.5px; color: var(--muted); max-width: 240px; line-height: 1.5; }
+    .progress-track { width: 100%; max-width: 280px; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+    .progress-fill  { height: 100%; background: var(--teal); border-radius: 2px; transition: width 0.3s ease; width: 0%; }
+    .progress-fill.fill-amber { background: var(--amber); }
+    .progress-fill.fill-red   { background: var(--red);   }
+
+    /* ── RESULT CARD ── */
+    .result-card { overflow: hidden; }
+    .result-card.verdict-safe    { border-color: rgba(14,168,130,0.3);  }
+    .result-card.verdict-phish   { border-color: rgba(232,75,106,0.3);  }
+    .result-card.verdict-sus     { border-color: rgba(245,158,11,0.3);  }
+
+    /* Score donut area */
+    .result-score-area {
+      padding: 22px 20px 18px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .donut-wrap { position: relative; width: 130px; height: 130px; }
+    .donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-bg    { fill: none; stroke: var(--surface3); stroke-width: 10; }
+    .donut-score { fill: none; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 301.6; stroke-dashoffset: 301.6; transition: stroke-dashoffset 1s ease, stroke 0.3s ease; }
+    .donut-score.c-safe  { stroke: var(--teal);  }
+    .donut-score.c-phish { stroke: var(--red);   }
+    .donut-score.c-sus   { stroke: var(--amber); }
+    .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .donut-val  { font-size: 26px; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; line-height: 1; }
+    .donut-sub  { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    .verdict-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 500;
+    }
+    .verdict-pill.safe  { background: var(--teal-lt);  color: var(--teal); border: 1px solid rgba(14,168,130,0.28);  }
+    .verdict-pill.phish { background: var(--red-lt);   color: var(--red);  border: 1px solid rgba(232,75,106,0.28);  }
+    .verdict-pill.sus   { background: var(--amber-lt); color: var(--amber);border: 1px solid rgba(245,158,11,0.28);  }
+    .verdict-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    /* Breakdown grid */
+    .breakdown-area { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    .breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .breakdown-item { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+    .breakdown-label { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .breakdown-val   { font-size: 13.5px; font-weight: 700; }
+    .c-safe  { color: var(--teal);  }
+    .c-phish { color: var(--red);   }
+    .c-sus   { color: var(--amber); }
+    .c-muted { color: var(--muted); }
+
+    /* Signals */
+    .signals-area { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+    .section-label { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+    .signal-row { display: flex; flex-direction: column; gap: 4px; }
+    .signal-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .signal-name { font-weight: 500; color: var(--text); }
+    .signal-pct  { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .signal-track { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+    .signal-fill  { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+    .sf-teal  { background: var(--teal);  }
+    .sf-red   { background: var(--red);   }
+    .sf-amber { background: var(--amber); }
+
+    /* Preview */
+    .preview-area { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .email-preview {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--muted); line-height: 1.65; white-space: pre-wrap;
+      max-height: 110px; overflow-y: auto;
+    }
+    .email-preview mark { background: #fef08a; color: #854d0e; border-radius: 3px; padding: 0 2px; }
+
+    /* Result actions */
+    .result-actions {
+      padding: 13px 20px;
+      display: flex; gap: 8px;
+      background: var(--surface2); border-top: 1px solid var(--border);
+    }
+    .result-actions .btn { flex: 1; justify-content: center; }
+
+    /* ── KEYWORD TAGS ── */
+    .keyword-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .keyword-tag { padding: 3px 9px; background: var(--amber-lt); color: #92600a; border: 1px solid rgba(245,158,11,0.25); border-radius: 20px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── ALERTS ── */
+    .alert { padding: 10px 13px; border-radius: var(--radius); font-size: 12.5px; border: 1px solid; }
+    .alert-info    { background: var(--blue-lt);  border-color: rgba(59,130,246,0.2);   color: var(--blue);  }
+    .alert-success { background: var(--teal-lt);  border-color: rgba(14,168,130,0.2);   color: #0a7a5f; }
+    .alert-warn    { background: var(--amber-lt); border-color: rgba(245,158,11,0.2);   color: #92600a; }
+    .alert-error   { background: var(--red-lt);   border-color: rgba(232,75,106,0.2);   color: #b33050; }
+
+    .hidden { display: none !important; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1080px) {
+      .content { grid-template-columns: 1fr; }
+      .results-panel { position: static; }
+    }
+    @media (max-width: 860px) {
+      body { overflow: auto; }
+      .sidebar { width: 100%; min-height: auto; flex-direction: row; align-items: center; }
+      .nav { flex-direction: row; flex: 1; padding: 8px 12px; gap: 4px; }
+      .nav-section, .sidebar-footer { display: none; }
+      .main { min-height: auto; }
+    }
+    @media (max-width: 560px) {
+      .content { padding: 16px; }
+      .topbar  { flex-wrap: wrap; }
+      .breakdown-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a class="brand" href="dashboard.html">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M9.5 12l1.7 1.7 3.5-4"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">PhishGuard</div>
+      <div class="brand-sub">Threat Intelligence</div>
+    </div>
+  </a>
+
+  <nav class="nav">
+    <span class="nav-section">Overview</span>
+    <a href="dashboard.html" class="nav-link">
+      <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9z"/><path d="M14 20h6V4h-6v16z"/><path d="M4 20h6v-3H4v3z"/></svg>
+      Dashboard
+    </a>
+    <a href="scanner.html" class="nav-link active">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8.5 11.5l2 2 4-5"/></svg>
+      Scan Email
+    </a>
+    <a href="history.html" class="nav-link">
+      <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      History
+    </a>
+    <a href="gmail.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Gmail</a>
+    <span class="nav-section">System</span>
+    <a href="admin.html" class="nav-link" id="adminNavLink">
+      <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1-2 3.4-.2-.1a1.8 1.8 0 0 0-2 .4l-.2.2a1.8 1.8 0 0 0-.5 1H9a1.8 1.8 0 0 0-.5-1l-.2-.2a1.8 1.8 0 0 0-2-.4l-.2.1-2-3.4.1-.1a1.8 1.8 0 0 0 .4-2 2 2 0 0 0-.7-.8L3.7 14v-4l.2-.1a2 2 0 0 0 .7-.8 1.8 1.8 0 0 0-.4-2l-.1-.1 2-3.4.2.1a1.8 1.8 0 0 0 2-.4l.2-.2A1.8 1.8 0 0 0 9 2h6a1.8 1.8 0 0 0 .5 1l.2.2a1.8 1.8 0 0 0 2 .4l.2-.1 2 3.4-.1.1a1.8 1.8 0 0 0-.4 2c.1.3.4.6.7.8l.2.1v4l-.2.1c-.3.2-.6.5-.7.9z"/></svg>
+      Admin
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="navAvatar">U</div>
+      <div class="user-info">
+        <div class="user-name" id="navUsername">User</div>
+        <div class="user-role">authenticated</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 4v16"/></svg>
+      Sign out
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="page-kicker">Live Analysis</span>
+      <h1 class="page-title">Scan Email</h1>
+      <p class="page-sub">Paste headers and body, or upload a file. The engine scores threat probability across model, language, URL, and sender signals.</p>
+    </div>
+    <div class="topbar-right">
+      <div class="top-user">
+        <div class="top-avatar" id="topAvatar">U</div>
+        <span class="top-name" id="topUsername">User</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── INPUT CARD ── -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><span class="card-title-dot dot-blue"></span>Message Input</div>
+          <div class="card-sub">Raw text, sender metadata, or an uploaded .eml / .txt file.</div>
+        </div>
+        <div class="mode-tabs" role="tablist">
+          <button class="mode-tab active" id="tabPaste"  type="button" onclick="switchMode('paste')">Paste</button>
+          <button class="mode-tab"        id="tabUpload" type="button" onclick="switchMode('upload')">Upload</button>
+        </div>
+      </div>
+
+      <!-- PASTE MODE -->
+      <div class="card-body" id="pasteMode">
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="form-label" for="emailSubject">Subject</label>
+            <input id="emailSubject" class="form-input" type="text" placeholder="Urgent account notice" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="emailSender">Sender</label>
+            <input id="emailSender" class="form-input" type="text" placeholder="security@example.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="emailBody">Email Body</label>
+            <textarea id="emailBody" class="form-textarea" placeholder="Paste the full email body here, including links and signature blocks…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modelSelect">Detection Model</label>
+            <select id="modelSelect" class="form-select">
+              <option value="ensemble">Ensemble — all models</option>
+              <option value="logistic_regression">Logistic Regression</option>
+              <option value="random_forest">Random Forest</option>
+              <option value="naive_bayes">Naive Bayes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="samples-row">
+          <span class="samples-label">Quick samples</span>
+          <div class="samples-btns">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="fillSample('phishing')">
+              <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+              Phishing
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="fillSample('safe')">
+              <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M9.5 12l1.7 1.7 3.5-4"/></svg>
+              Safe
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="scanBtn" onclick="runScan()">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8.5 11.5l2 2 4-5"/></svg>
+          Analyze Email
+        </button>
+      </div>
+
+      <!-- UPLOAD MODE -->
+      <div class="card-body hidden" id="uploadMode">
+        <div class="drop-zone" id="dropZone"
+          onclick="document.getElementById('emlFile').click()"
+          ondragover="handleDragOver(event)"
+          ondragleave="handleDragLeave(event)"
+          ondrop="handleDrop(event)">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+          </div>
+          <div class="drop-title">Drop an .eml or .txt file here</div>
+          <div class="drop-sub">Click to browse · Files up to 5 MB</div>
+        </div>
+        <input type="file" id="emlFile" accept=".eml,.txt" style="display:none" onchange="handleFileSelect(event)" />
+
+        <div id="fileInfo" class="file-info hidden">
+          <div class="file-info-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div>
+            <div class="file-info-name" id="fileName">file.eml</div>
+            <div class="file-info-size" id="fileSize">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="uploadScanBtn" onclick="runUploadScan()" disabled>
+          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M8 12h8M12 8v8" stroke-linecap="round"/></svg>
+          Analyze File
+        </button>
+      </div>
+    </div>
+
+    <!-- ── RESULTS PANEL ── -->
+    <div class="results-panel">
+
+      <!-- Empty -->
+      <div class="card result-empty" id="defaultResult">
+        <div class="result-empty-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M9.5 12l1.7 1.7 3.5-4"/></svg>
+        </div>
+        <h3>Awaiting Analysis</h3>
+        <p>Results will appear here with a risk score, verdict, confidence, signal breakdown, and flagged language.</p>
+      </div>
+
+      <!-- Scanning -->
+      <div class="card scanning-card hidden" id="scanningResult">
+        <div class="scanning-pulse">
+          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-2.8 8.5-7 10-4.2-1.5-7-5.4-7-10V6l7-3z"/><path d="M9.5 12l1.7 1.7 3.5-4"/></svg>
+        </div>
+        <h3>Analyzing threats…</h3>
+        <p>Running model inference, NLP heuristics, URL inspection, and sender checks.</p>
+        <div class="progress-track">
+          <div class="progress-fill fill-amber" id="scanProgress"></div>
+        </div>
+      </div>
+
+      <!-- Actual result (injected by scanner.js or demo below) -->
+      <div id="actualResult" class="hidden"></div>
+
+    </div><!-- /results-panel -->
+  </div><!-- /content -->
+</main>
+
+<script>
+  /* ── Mode toggle ── */
+  function switchMode(mode) {
+    const isPaste = mode === 'paste';
+    document.getElementById('tabPaste').classList.toggle('active', isPaste);
+    document.getElementById('tabUpload').classList.toggle('active', !isPaste);
+    document.getElementById('pasteMode').classList.toggle('hidden', !isPaste);
+    document.getElementById('uploadMode').classList.toggle('hidden', isPaste);
+  }
+
+  /* ── Sample filler ── */
+  const SAMPLES = {
+    phishing: {
+      subject: 'URGENT: Your account will be suspended!',
+      sender:  'no-reply@amaz0n-secure.com',
+      body:    'Dear Customer,\n\nWe have detected suspicious activity on your account. Your account will be permanently suspended within 24 hours unless you verify your information immediately.\n\nClick here to verify: http://amaz0n-secure.com/verify?token=xX992\n\nAmazon Security Team'
+    },
+    safe: {
+      subject: 'Q3 Team Report — Action Required',
+      sender:  'reports@company.io',
+      body:    'Hi team,\n\nPlease find the Q3 performance report attached. Kindly review the figures and send your section updates to your manager by Friday.\n\nThanks,\nOperations Team'
+    }
+  };
+  function fillSample(type) {
+    const s = SAMPLES[type];
+    document.getElementById('emailSubject').value = s.subject;
+    document.getElementById('emailSender').value  = s.sender;
+    document.getElementById('emailBody').value    = s.body;
+  }
+
+  /* ── Drop zone ── */
+  function handleDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+  function handleDragLeave()  { document.getElementById('dropZone').classList.remove('dragover'); }
+  function handleDrop(e) {
+    e.preventDefault();
+    handleDragLeave();
+    const file = e.dataTransfer.files[0];
+    if (file) applyFile(file);
+  }
+  function handleFileSelect(e) { const file = e.target.files[0]; if (file) applyFile(file); }
+  function applyFile(file) {
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('fileInfo').classList.remove('hidden');
+    document.getElementById('uploadScanBtn').disabled = false;
+  }
+
+  /* ── Demo scan (replaced by scanner.js when backend is live) ── */
+  function runScan() {
+    const body = document.getElementById('emailBody').value.trim();
+    if (!body) { alert('Please paste an email body before scanning.'); return; }
+    startScanUI();
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct += Math.random() * 18;
+      document.getElementById('scanProgress').style.width = Math.min(pct, 92) + '%';
+      if (pct >= 92) { clearInterval(iv); setTimeout(showDemoResult, 400); }
+    }, 120);
+  }
+  function runUploadScan() { startScanUI(); setTimeout(showDemoResult, 1800); }
+
+  function startScanUI() {
+    document.getElementById('defaultResult').classList.add('hidden');
+    document.getElementById('actualResult').classList.add('hidden');
+    document.getElementById('scanningResult').classList.remove('hidden');
+    document.getElementById('scanProgress').style.width = '0%';
+  }
+
+  function showDemoResult() {
+    const sender  = document.getElementById('emailSender').value || 'unknown@domain.com';
+    const body    = document.getElementById('emailBody').value   || '';
+    const isPhish = /amaz0n|free|click|verify|suspend|gift|urgent|prize/i.test(body + sender);
+    const score   = isPhish ? 94 : 7;
+    const cls     = isPhish ? 'phish' : 'safe';
+    const label   = isPhish ? 'Phishing' : 'Safe';
+    const donutC  = Math.round((1 - score / 100) * 301.6);
+
+    document.getElementById('scanProgress').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('scanningResult').classList.add('hidden');
+      const el = document.getElementById('actualResult');
+      el.classList.remove('hidden');
+      el.innerHTML = buildResultHTML(score, cls, label, donutC, body);
+      // animate donut
+      requestAnimationFrame(() => {
+        const arc = el.querySelector('.donut-score');
+        if (arc) arc.style.strokeDashoffset = donutC;
+        el.querySelectorAll('.signal-fill').forEach(f => {
+          const w = f.dataset.width;
+          if (w) setTimeout(() => f.style.width = w, 50);
+        });
+      });
+    }, 300);
+  }
+
+  function buildResultHTML(score, cls, label, donutOffset, body) {
+    const signals = cls === 'phish'
+      ? [{ name: 'Language Pressure', pct: 91, c: 'sf-red' }, { name: 'URL Risk', pct: 88, c: 'sf-red' }, { name: 'Sender Reputation', pct: 76, c: 'sf-amber' }, { name: 'Model Confidence', pct: 94, c: 'sf-red' }]
+      : [{ name: 'Language Pressure', pct: 4,  c: 'sf-teal'}, { name: 'URL Risk', pct: 0,  c: 'sf-teal'}, { name: 'Sender Reputation', pct: 8,  c: 'sf-teal'}, { name: 'Model Confidence', pct: 7,  c: 'sf-teal'}];
+
+    const preview = (body.slice(0, 260) + (body.length > 260 ? '…' : ''))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/(https?:\/\/[^\s]+)/g, '<mark>$1</mark>');
+
+    return `
+      <div class="card result-card verdict-${cls}">
+        <div class="result-score-area">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100">
+              <circle class="donut-bg" cx="50" cy="50" r="48"/>
+              <circle class="donut-score c-${cls}" cx="50" cy="50" r="48" style="stroke-dashoffset:${donutOffset}"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-val c-${cls}">${score}</div>
+              <div class="donut-sub">risk score</div>
+            </div>
+          </div>
+          <div class="verdict-pill ${cls}"><div class="verdict-dot"></div>${label}</div>
+        </div>
+
+        <div class="breakdown-area">
+          <div class="section-label">Signal Breakdown</div>
+          <div class="breakdown-grid">
+            <div class="breakdown-item"><div class="breakdown-label">Risk Score</div><div class="breakdown-val c-${cls}">${score}/100</div></div>
+            <div class="breakdown-item"><div class="breakdown-label">Verdict</div><div class="breakdown-val c-${cls}">${label}</div></div>
+            <div class="breakdown-item"><div class="breakdown-label">URLs Found</div><div class="breakdown-val c-${cls === 'phish' ? 'phish' : 'muted'}">${cls === 'phish' ? '3 suspicious' : '0'}</div></div>
+            <div class="breakdown-item"><div class="breakdown-label">Sender Rep.</div><div class="breakdown-val c-${cls === 'phish' ? 'phish' : 'safe'}">${cls === 'phish' ? 'Unknown' : 'Trusted'}</div></div>
+          </div>
+        </div>
+
+        <div class="signals-area">
+          <div class="section-label">Model Signals</div>
+          ${signals.map(s => `
+            <div class="signal-row">
+              <div class="signal-meta"><span class="signal-name">${s.name}</span><span class="signal-pct">${s.pct}%</span></div>
+              <div class="signal-track"><div class="signal-fill ${s.c}" data-width="${s.pct}%" style="width:0%"></div></div>
+            </div>`).join('')}
+        </div>
+
+        <div class="preview-area">
+          <div class="section-label">Email Preview</div>
+          <div class="email-preview">${preview || '(no body)'}</div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-ghost btn-sm" onclick="resetScan()">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            New Scan
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='history.html'">
+            <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            View History
+          </button>
+        </div>
+      </div>`;
+  }
+
+  function resetScan() {
+    document.getElementById('actualResult').classList.add('hidden');
+    document.getElementById('scanningResult').classList.add('hidden');
+    document.getElementById('defaultResult').classList.remove('hidden');
+    document.getElementById('emailSubject').value = '';
+    document.getElementById('emailSender').value  = '';
+    document.getElementById('emailBody').value    = '';
+  }
+
+  /* ── Admin nav ── */
+  const adminLink = document.getElementById('adminNavLink');
+  if (adminLink) { const r = localStorage.getItem('role') || ''; if (r !== 'admin') adminLink.style.display = 'none'; }
+
+  function logout() { if (typeof window._logout === 'function') window._logout(); }
+</script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scanner.js"></script>
+</body>
+</html>

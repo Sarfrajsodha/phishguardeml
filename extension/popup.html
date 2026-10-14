@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard AI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 360px;
+      background: #050a0f;
+      color: #e2eaf8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+    }
+    .header {
+      background: linear-gradient(135deg, #0a1628, #071120);
+      padding: 14px 16px;
+      border-bottom: 1px solid #1a3050;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header .logo { font-size: 1.5rem; }
+    .header h1 { font-size: 1rem; font-weight: 700; color: #00f5ff; }
+    .header p  { font-size: 0.75rem; color: #3d5270; }
+
+    .content { padding: 16px; }
+
+    /* Auth section */
+    #authSection input {
+      width: 100%; padding: 8px 12px; border-radius: 6px;
+      background: #071120; border: 1px solid #1a3050;
+      color: #e2eaf8; font-size: 13px; margin-bottom: 8px;
+    }
+    #authSection input:focus { outline: none; border-color: #00f5ff; }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 9px 16px; border-radius: 6px;
+      border: none; cursor: pointer; font-weight: 600; font-size: 13px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary  { background: linear-gradient(135deg,#006e9e,#00b4d8); color: #fff; }
+    .btn-scan     { background: linear-gradient(135deg,#00663e,#00ff88); color: #050a0f; }
+    .btn-danger   { background: linear-gradient(135deg,#8b0000,#ff3366); color: #fff; }
+    .btn-sm       { font-size: 11px; padding: 6px 12px; width: auto; }
+
+    /* Status row */
+    .status-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 0; font-size: 12px; color: #7a92b3;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-green { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
+    .dot-red   { background: #ff3366; box-shadow: 0 0 6px #ff3366; }
+    .dot-gray  { background: #3d5270; }
+
+    /* Result card */
+    .result-card {
+      border-radius: 8px; padding: 14px; margin-top: 12px;
+      border: 1px solid;
+    }
+    .result-card.phishing { background: rgba(255,51,102,0.08); border-color: rgba(255,51,102,0.3); }
+    .result-card.safe     { background: rgba(0,255,136,0.06);  border-color: rgba(0,255,136,0.25); }
+
+    .result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .result-icon  { font-size: 1.5rem; }
+    .result-label { font-size: 1rem; font-weight: 800; }
+    .text-red   { color: #ff3366; }
+    .text-green { color: #00ff88; }
+    .text-cyan  { color: #00f5ff; }
+
+    .confidence-row {
+      display: flex; justify-content: space-between; margin-bottom: 6px;
+      font-size: 12px; color: #7a92b3;
+    }
+    .conf-value { font-weight: 700; font-family: monospace; }
+    .bar-track { height: 6px; background: #0a1628; border-radius: 50px; overflow: hidden; margin-bottom: 10px; }
+    .bar-fill  { height: 100%; border-radius: 50px; transition: width 0.8s ease; }
+    .fill-phishing { background: linear-gradient(90deg, #8b0000, #ff3366); }
+    .fill-safe     { background: linear-gradient(90deg, #006633, #00ff88); }
+
+    .detail-row { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; color: #7a92b3; }
+    .detail-val { color: #e2eaf8; font-family: monospace; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 50px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .badge-kw { background: rgba(255,51,102,0.12); color: #ff6b8a; border: 1px solid rgba(255,51,102,0.25); }
+
+    .alert { padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; }
+    .alert-error   { background: rgba(255,51,102,0.1); color: #ff8fa3; border: 1px solid rgba(255,51,102,0.2); }
+    .alert-info    { background: rgba(0,245,255,0.08); color: #00f5ff; border: 1px solid rgba(0,245,255,0.2); }
+    .alert-success { background: rgba(0,255,136,0.08); color: #7fffbf; border: 1px solid rgba(0,255,136,0.25); }
+
+    .divider { height: 1px; background: #1a3050; margin: 12px 0; }
+    .footer-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .spinner { width: 16px; height: 16px; border: 2px solid #1a3050; border-top-color: #00f5ff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <span class="logo">🛡️</span>
+  <div>
+    <h1>PhishGuard AI</h1>
+    <p>Email Phishing Detector</p>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Auth Section -->
+  <div id="authSection">
+    <div class="status-row"><span class="dot dot-gray"></span> Not logged in</div>
+    <input type="text" id="extIdentifier" placeholder="Username or email" />
+    <input type="password" id="extPassword" placeholder="Password" />
+    <button class="btn btn-primary" id="loginBtn" onclick="extLogin()">🔐 Login</button>
+    <div id="authAlert"></div>
+  </div>
+
+  <!-- Logged-in Section -->
+  <div id="mainSection" style="display:none;">
+    <div class="status-row">
+      <span class="dot dot-green" id="statusDot"></span>
+      <span id="statusText">Connected as <strong id="loggedUser">—</strong></span>
+      <button class="btn btn-sm" onclick="extLogout()" style="margin-left:auto;background:transparent;border:1px solid #1a3050;color:#7a92b3;">Logout</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Scan button -->
+    <button class="btn btn-scan" id="scanBtn" onclick="scanCurrentEmail()">
+      🔍 Scan Current Email
+    </button>
+    <div id="scanStatus" class="alert alert-info" style="margin-top:8px;">
+      Open an email in Gmail or Outlook, then click Scan.
+    </div>
+
+    <!-- Result -->
+    <div id="scanResult" style="display:none;"></div>
+
+    <div class="divider"></div>
+    <div style="display:flex;gap:6px;">
+      <a href="http://localhost:5000" target="_blank" class="btn btn-sm" style="flex:1;background:transparent;border:1px solid #1a3050;color:#7a92b3;">Dashboard ↗</a>
+      <a href="http://localhost:5000/scanner.html" target="_blank" class="btn btn-sm" style="flex:1;background:transparent;border:1px solid #1a3050;color:#7a92b3;">Scanner ↗</a>
+    </div>
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
